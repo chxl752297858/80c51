@@ -1,0 +1,219 @@
+C51 COMPILER V9.00   1                                                                     10/02/2011 15:34:41 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: D:\installs soft disk\Keil C51\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /****12M晶振下89c52程序*******************/
+   2          
+   3          #include <reg52.h>
+   4          #define uchar unsigned char
+   5          #define uint unsigned int
+   6          uchar *s;
+   7          sbit rs=P3^5;    
+   8          sbit rw=P3^6;
+   9          sbit e=P3^7;
+  10          
+  11          uchar second,minute,hour,count;
+  12          
+  13          void delay_50us(uint t)  //延时50US
+  14          {uchar j;
+  15   1      for(;t>0;t--)
+  16   1      for(j=19;j>0;j--);
+  17   1      }
+  18          
+  19          void write_com(uchar com)  //写数据  
+  20          {
+  21   1      
+  22   1      rs=0;
+  23   1      rw=0;
+  24   1      delay_50us(1);
+  25   1      P1=com;
+  26   1      e=1;
+  27   1      delay_50us(20);
+  28   1      e=0;
+  29   1      }
+  30          
+  31          void write_data(uchar dat) //写指令
+  32          {
+  33   1      rs=1;
+  34   1      rw=0;
+  35   1      P1=dat;
+  36   1      e=1;
+  37   1      delay_50us(10);
+  38   1      e=0;
+  39   1      delay_50us(2);
+  40   1      }
+  41          
+  42          void init_12864(void)  //初始化
+  43          {   delay_50us(3);//初始化等待时间大于40ms 
+  44   1          write_com(0x30);//功能设置，一次送8位数据，基本指令集  
+  45   1          delay_50us(4); //等待是间要大于100个us
+  46   1          write_com(0x30);//功能设置，一次送8位数据，基本指令集 
+  47   1          delay_50us(1); //等待是间要大于37个us 
+  48   1          write_com(0x0f);//0000,1100       整体显示，游标off，游标位置off 
+  49   1          delay_50us(1); //等待是间要大于37个us 
+  50   1           write_com(0x01);//0000,0001     清屏   
+  51   1           delay_50us(240);//等待时间大于10ms
+  52   1          write_com(0x06); //0000,0010     DDRAM地址归位 
+  53   1          delay_50us(10);
+  54   1      }
+  55          
+C51 COMPILER V9.00   1                                                                     10/02/2011 15:34:41 PAGE 2   
+
+  56          
+  57          void display(uchar n,uchar m,uchar *s) //写字符在哪行那列
+  58          {
+  59   1        
+  60   1          switch(n)
+  61   1       {
+  62   2           case 1:write_com(0x80+m-1);break;
+  63   2           case 2:write_com(0x90+m-1);break;
+  64   2           case 3:write_com(0x88+m-1);break;
+  65   2           case 4:write_com(0x98+m-1);break;
+  66   2        default:;
+  67   2       }
+  68   1      
+  69   1        while(*s>0)
+  70   1       {
+  71   2          write_data(*s);
+  72   2          s++;
+  73   2          delay_50us(1000);
+  74   2       }
+  75   1      }
+  76          
+  77          write_separate_constant(uchar x,uchar add,uchar date) //分离常数分别显示程序
+  78          {
+  79   1      uchar decade,entry;
+  80   1      decade=date/10;
+  81   1      entry=date%10;
+  82   1      write_com(x+add);
+  83   1      write_data(0x30+decade);
+  84   1      write_data(0x30+entry);
+  85   1      return 0;
+  86   1      }
+  87          
+  88          void init_time0(void)
+  89          {TMOD=0X01;
+  90   1       TH0=(65536-50000)/256;
+  91   1       TL0=(65536-50000)%256;
+  92   1       EA=1;
+  93   1       ET0=1;
+  94   1       TR0=1;
+  95   1      }
+  96          
+  97          
+  98          
+  99          
+ 100          void  main()  //主函数
+ 101          {
+ 102   1      
+ 103   1       init_time0();
+ 104   1       init_12864();
+ 105   1       write_com(0x0c);
+ 106   1       
+ 107   1       while(1)
+ 108   1        {
+ 109   2      
+ 110   2        write_com(0x80+2);
+ 111   2        write_data(0x10);
+ 112   2        delay_50us(10);
+ 113   2        s="I love you";
+ 114   2        display(1,2,s); //写字符在哪行那列
+ 115   2      
+ 116   2        delay_50us(10);
+ 117   2        s="00时00分00秒";
+C51 COMPILER V9.00   1                                                                     10/02/2011 15:34:41 PAGE 3   
+
+ 118   2        display(2,2,s); //写字符在哪行那列
+ 119   2      
+ 120   2        delay_50us(10);
+ 121   2        s="MY darling！";
+ 122   2        display(3,2,s); //写字符在哪行那列
+ 123   2      
+ 124   2        
+ 125   2        
+ 126   2      
+ 127   2       while(1)
+ 128   2       {
+ 129   3         if(count==20)    //当aa==20时，为一秒
+ 130   3             {
+ 131   4               count=0;       //aa清零
+ 132   4               second++;
+ 133   4               if(second==60)//清零之后，miao加一
+ 134   4               {   
+ 135   5                second=0;
+ 136   5                  minute++;
+ 137   5                  if(minute==60)
+ 138   5                  {
+ 139   6                   minute=0;
+ 140   6           hour++;
+ 141   6           if(hour==24)
+ 142   6           {hour=0;
+ 143   7         
+ 144   7          
+ 145   7          
+ 146   7              }
+ 147   6      
+ 148   6           write_separate_constant(0x90,1,hour)       ;
+ 149   6                   }
+ 150   5           write_separate_constant(0x90,3,minute)     ;
+ 151   5               }
+ 152   4          write_separate_constant(0x90,5,second)      ;
+ 153   4              
+ 154   4        }                    
+ 155   3           
+ 156   3      
+ 157   3      
+ 158   3        }
+ 159   2      
+ 160   2      
+ 161   2      // while(1);
+ 162   2      
+ 163   2      
+ 164   2      }
+ 165   1      
+ 166   1      
+ 167   1       
+ 168   1       
+ 169   1       
+ 170   1       
+ 171   1       
+ 172   1       
+ 173   1       
+ 174   1       }
+ 175          
+ 176          
+ 177          
+ 178          
+ 179          
+C51 COMPILER V9.00   1                                                                     10/02/2011 15:34:41 PAGE 4   
+
+ 180          
+ 181            void timer0() interrupt 1     //延时1秒
+ 182          {
+ 183   1      
+ 184   1      TH0=(65536-50000)/256;
+ 185   1      TL0=(65536-50000)%256;
+ 186   1      count++;
+ 187   1      }
+ 188          
+ 189          
+ 190          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    416    ----
+   CONSTANT SIZE    =     37    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

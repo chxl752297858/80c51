@@ -1,0 +1,298 @@
+C51 COMPILER V9.01   1                                                                     10/03/2012 10:06:38 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include<regx51.h>   
+   2          #include<intrins.h>
+   3          #define uint unsigned int
+   4          #define uchar unsigned char
+   5          
+   6          uchar irtime;//hong wai shi jian
+   7          uchar startflag;//qi dong jie shou
+   8          uchar irdata[33];//chun shu ju
+   9          uchar bitnum;//第几位
+  10          uchar irreceok;//hong wai jie shou wan l
+  11          uchar ircode[4];// ma
+  12          uchar irprosok;
+  13          uchar disp[8];
+  14          
+  15          
+  16          
+  17          
+  18          uchar *s;
+  19          
+  20          uchar irtime;//红外时间
+  21          
+  22          sbit E_CLK=P3^7;  //串行时钟信号
+  23          sbit RW_SID=P3^6; //
+  24                   
+  25          void  delay_50us(uint j)   //延时50uS  
+  26              {   
+  27   1              uint  i; 
+  28   1        for(; j>0; j--); 
+  29   1              for(i=19; i>0; i--);  
+  30   1          }
+  31          //串行发送一字节数据   
+  32          void send_byte(uchar  dat)   
+  33              {   
+  34   1                       uchar i;   
+  35   1                       for(i=0;i<8;i++)   
+  36   1                     {   
+  37   2                        E_CLK=0;   
+  38   2                        if(dat&0x80)
+  39   2            RW_SID=1;
+  40   2                        else     
+  41   2                     RW_SID=0;   
+  42   2                        E_CLK=1;   
+  43   2                        dat=dat<<1;   
+  44   2                       }   
+  45   1          } 
+  46          
+  47          //写控制命令   
+  48          void     write_com(uchar  dat)   
+  49              {
+  50   1                    send_byte(0xF8);//1111 1000     RW=0,RS=0  RW=0表示数据从MCU写到LCD RS=0表示数据是控制指令 
+  51   1                    send_byte(dat&0xF0);//高四位       RW=1表示数据从LCD写到MCD RS=1表示显示数据 
+  52   1                    send_byte((dat&0x0F)<<4);//低四位  
+  53   1          }
+  54          //写显示数据或单字节字符   
+  55          void     write_data(uchar dat)   
+C51 COMPILER V9.01   1                                                                     10/03/2012 10:06:38 PAGE 2   
+
+  56              
+  57           {
+  58   1                    send_byte(0xFA);//1111 1010     RW=0,RS=1   
+  59   1                    send_byte(dat&0xF0);//高四位   
+  60   1                    send_byte((dat&0x0F)<<4);//低四位  
+  61   1          }
+  62          
+  63           
+  64          
+  65          
+  66          void display(uchar n,uchar m,uchar *s) //写字符在哪行那列
+  67          {
+  68   1        
+  69   1          switch(n)
+  70   1       {
+  71   2           case 1:write_com(0x80+m-1);break;
+  72   2           case 2:write_com(0x90+m-1);break;
+  73   2           case 3:write_com(0x88+m-1);break;
+  74   2           case 4:write_com(0x98+m-1);break;
+  75   2        default:;
+  76   2       }
+  77   1      
+  78   1        while(*s>0)
+  79   1       {
+  80   2          write_data(*s);
+  81   2          s++;
+  82   2         // delay_50us(10);
+  83   2       }
+  84   1      }
+  85          
+  86          
+  87          
+  88           void init_time(void)
+  89          {
+  90   1       TMOD=0X02;
+  91   1       TH0=0x00;
+  92   1       TL0=0x00;
+  93   1       ET0=1; //打开中断
+  94   1       EA=1;  //启动总中断
+  95   1       TR0=1; //启动中断
+  96   1      
+  97   1       }
+  98          
+  99           
+ 100          void     init_lcm(void)   
+ 101              {   
+ 102   1                   delay_50us(10);  
+ 103   1                   write_com(0x30);//功能设置，一次送8位数据，基本指令集   
+ 104   1                   write_com(0x0C);//0000,1100       整体显示，游标off，游标位置off   
+ 105   1                   write_com(0x01);//0000,0001     清DDRAM   
+ 106   1                   write_com(0x02);//0000,0010     DDRAM地址归位   
+ 107   1                   write_com(0x08);//1000,0000     设定DDRAM     7位地址000，0000到地址计数器AC   
+ 108   1          }
+ 109          
+ 110          
+ 111          void irpros(void)//解码程序
+ 112          {
+ 113   1        uchar k,i,j;
+ 114   1        uchar value;
+ 115   1        k=1;
+ 116   1        for(j=0;j<4;j++)//提取4个码 其中两个用户码 一个数据码 一个数据反码
+ 117   1        {
+C51 COMPILER V9.01   1                                                                     10/03/2012 10:06:38 PAGE 3   
+
+ 118   2                 for(i=0;i<8;i++)     //每循环八次提取一个编码值
+ 119   2                 {
+ 120   3                        value=value>>1;//右移七次
+ 121   3                  if(irdata[k]>6)//判断8次
+ 122   3                  {
+ 123   4                    value=value|0x80; //高位置一
+ 124   4                  }
+ 125   3                  k++;
+ 126   3        }
+ 127   2        ircode[j]=value;
+ 128   2       }
+ 129   1       irprosok=1;  // 编码完成标志
+ 130   1      }
+ 131          
+ 132          
+ 133           
+ 134          void init_int0(void)    //外部中断
+ 135          {
+ 136   1         IT0=1;
+ 137   1         EX0=1;
+ 138   1         EA=1; 
+ 139   1      }
+ 140          
+ 141          separate_constant(uchar x,uchar count) //分离常数
+ 142          {
+ 143   1      //uchar count;
+ 144   1      if(count<=9)
+ 145   1      {
+ 146   2      write_com(x);
+ 147   2      write_data(0x30+count);
+ 148   2      }
+ 149   1      if(count>9)
+ 150   1      {
+ 151   2       write_com(x);
+ 152   2      write_data(0x40+count-9);
+ 153   2      
+ 154   2      }
+ 155   1      return 0;
+ 156   1      }
+ 157          
+ 158          void irwork(void)  //数码转换程序
+ 159          {
+ 160   1       disp[0]=ircode[0]/16;// 存放用户码
+ 161   1       disp[1]=ircode[0]%16;// 存放用户码
+ 162   1      
+ 163   1       disp[2]=ircode[1]/16;// 存放用户码
+ 164   1       disp[3]=ircode[1]%16;// 存放用户码
+ 165   1      
+ 166   1       disp[4]=ircode[2]/16;// 存放数据原码
+ 167   1       disp[5]=ircode[2]%16;// 存放数据原码
+ 168   1      
+ 169   1       disp[6]=ircode[3]/16;// 存放数据反码
+ 170   1       disp[7]=ircode[3]%16;//存放数据反码
+ 171   1      
+ 172   1      }
+ 173            
+ 174          
+ 175          
+ 176          
+ 177          void display1(void)
+ 178          {  separate_constant(0x86,disp[0]);
+ 179   1         separate_constant(0x87,disp[1]);
+C51 COMPILER V9.01   1                                                                     10/03/2012 10:06:38 PAGE 4   
+
+ 180   1         separate_constant(0x96,disp[2]);
+ 181   1         separate_constant(0x97,disp[3]);
+ 182   1         separate_constant(0x8e,disp[4]);
+ 183   1         separate_constant(0x8f,disp[5]);
+ 184   1         separate_constant(0x9e,disp[6]);
+ 185   1         separate_constant(0x9f,disp[7]);
+ 186   1      }
+ 187          
+ 188          
+ 189          
+ 190          
+ 191          
+ 192          
+ 193          
+ 194          
+ 195          void  main(void)   
+ 196              {   
+ 197   1                    init_time();
+ 198   1                        init_int0();
+ 199   1                init_lcm();     //12864初始化程序
+ 200   1                        delay_50us(2);
+ 201   1      s="客户码8 位";
+ 202   1      display(1,1,s);  ///输出在第一行
+ 203   1      s="客户码8 位";
+ 204   1      display(2,1,s);  ///输出在第一行
+ 205   1      s="原码  8 位";
+ 206   1      display(3,1,s);  ///输出在第一行
+ 207   1      s="反码  8 位";
+ 208   1      display(4,1,s);  ///输出在第一行
+ 209   1                while(1) 
+ 210   1      
+ 211   1             {  
+ 212   2                 
+ 213   2                if(irreceok==1)
+ 214   2        {
+ 215   3         irpros();
+ 216   3        irreceok=0;
+ 217   3        }
+ 218   2        if(irprosok)
+ 219   2        {
+ 220   3         irwork();
+ 221   3        irprosok=0;
+ 222   3        }
+ 223   2         display1();
+ 224   2         
+ 225   2      
+ 226   2      
+ 227   2      
+ 228   2      }
+ 229   1      
+ 230   1         }
+ 231          
+ 232            
+ 233            void timer0() interrupt 1
+ 234          {
+ 235   1         irtime++;//255 
+ 236   1      }
+ 237          
+ 238           
+ 239          void int0() interrupt 0
+ 240          {
+ 241   1           if(startflag)
+C51 COMPILER V9.01   1                                                                     10/03/2012 10:06:38 PAGE 5   
+
+ 242   1        {
+ 243   2           if(irtime>32)//检测引导码9毫秒时间
+ 244   2        {
+ 245   3          bitnum=0; 
+ 246   3        }
+ 247   2        irdata[bitnum]=irtime;
+ 248   2        irtime=0;
+ 249   2        bitnum++;
+ 250   2        if(bitnum==33)//接收数据完成
+ 251   2        {
+ 252   3         bitnum=0;    //清零下一次使用
+ 253   3         irreceok=1; //红外接收完毕标志位 
+ 254   3      
+ 255   3        } 
+ 256   2        }
+ 257   1        else
+ 258   1        {
+ 259   2         startflag=1;
+ 260   2        irtime=0;
+ 261   2        } 
+ 262   1      } 
+ 263           
+ 264          
+ 265          
+ 266          
+ 267          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    578    ----
+   CONSTANT SIZE    =     33    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     53    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

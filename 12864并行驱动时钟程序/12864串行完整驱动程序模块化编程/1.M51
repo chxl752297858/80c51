@@ -1,0 +1,240 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        11/24/2011  17:06:55  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+D:\INSTALLS SOFT DISK\KEIL C51\C51\BIN\BL51.EXE 1.obj, seri12864.obj TO 1 RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  1.obj (1)
+  seri12864.obj (SERI12864)
+  D:\INSTALLS SOFT DISK\KEIL C51\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\INSTALLS SOFT DISK\KEIL C51\C51\LIB\C51S.LIB (?C?CLDPTR)
+
+
+LINK MAP OF MODULE:  1 (1)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            IDATA   0008H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     004DH     UNIT         ?PR?_DIS_PAGE?SERI12864
+            CODE    0050H     0048H     UNIT         ?PR?_DIS_LINE?SERI12864
+            CODE    0098H     0039H     UNIT         ?PR?INIT_12864?SERI12864
+            CODE    00D1H     0027H     UNIT         ?PR?_DELAY_50US?SERI12864
+            CODE    00F8H     0025H     UNIT         ?CO?1
+            CODE    011DH     001BH     UNIT         ?PR?MAIN?1
+            CODE    0138H     0019H     UNIT         ?PR?_SEND_BYTE?SERI12864
+            CODE    0151H     0019H     UNIT         ?C?LIB_CODE
+            CODE    016AH     0014H     UNIT         ?PR?_WRI_12864?SERI12864
+            CODE    017EH     000CH     UNIT         ?C_C51STARTUP
+
+
+
+OVERLAY MAP OF MODULE:   1 (1)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?1
+
+?PR?MAIN?1
+  +--> ?PR?INIT_12864?SERI12864
+  +--> ?CO?1
+  +--> ?PR?_DIS_PAGE?SERI12864
+  +--> ?PR?_DIS_LINE?SERI12864
+
+?PR?INIT_12864?SERI12864
+  +--> ?PR?_DELAY_50US?SERI12864
+  +--> ?PR?_WRI_12864?SERI12864
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      11/24/2011  17:06:55  PAGE 2
+
+
+?PR?_DELAY_50US?SERI12864
+  +--> ?PR?_WRI_12864?SERI12864
+
+?PR?_WRI_12864?SERI12864
+  +--> ?PR?_SEND_BYTE?SERI12864
+
+?PR?_DIS_PAGE?SERI12864
+  +--> ?PR?_WRI_12864?SERI12864
+  +--> ?PR?_DELAY_50US?SERI12864
+
+?PR?_DIS_LINE?SERI12864
+  +--> ?PR?_WRI_12864?SERI12864
+  +--> ?PR?_DELAY_50US?SERI12864
+
+
+
+SYMBOL TABLE OF MODULE:  1 (1)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        1
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  C:011DH         PUBLIC        main
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          MAIN
+  C:011DH         LINE#         7
+  C:011DH         LINE#         8
+  C:011DH         LINE#         9
+  C:0120H         LINE#         10
+  C:0120H         LINE#         11
+  C:0120H         LINE#         12
+  C:0129H         LINE#         13
+  C:0136H         LINE#         14
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        1
+
+  -------         MODULE        SERI12864
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  B:0080H.1       PUBLIC        e_clk
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  B:0080H.0       PUBLIC        rw_sid
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  C:0098H         PUBLIC        init_12864
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+BL51 BANKED LINKER/LOCATER V6.22                                                      11/24/2011  17:06:55  PAGE 3
+
+
+  C:016AH         PUBLIC        _wri_12864
+  C:0003H         PUBLIC        _dis_page
+  C:00DAH         PUBLIC        _delay_50us
+  C:0138H         PUBLIC        _send_byte
+  C:0050H         PUBLIC        _dis_line
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          L?0040
+  -------         ENDPROC       L?0040
+  -------         PROC          _DELAY_50US
+  D:0006H         SYMBOL        j
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:00DAH         LINE#         5
+  C:00DAH         LINE#         6
+  C:00DAH         LINE#         8
+  C:00EAH         LINE#         9
+  C:00F7H         LINE#         10
+  -------         ENDPROC       _DELAY_50US
+  -------         PROC          _SEND_BYTE
+  D:0007H         SYMBOL        dat
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:0138H         LINE#         13
+  C:0138H         LINE#         14
+  C:0138H         LINE#         16
+  C:013AH         LINE#         17
+  C:013AH         LINE#         18
+  C:013CH         LINE#         19
+  C:0140H         LINE#         20
+  C:0144H         LINE#         22
+  C:0146H         LINE#         23
+  C:0148H         LINE#         24
+  C:014CH         LINE#         25
+  C:0150H         LINE#         26
+  -------         ENDPROC       _SEND_BYTE
+  -------         PROC          _WRI_12864
+  D:0007H         SYMBOL        value
+  D:0005H         SYMBOL        dat
+  C:016AH         LINE#         29
+  C:016AH         LINE#         30
+  C:016AH         LINE#         31
+  C:016DH         LINE#         32
+  C:0174H         LINE#         33
+  -------         ENDPROC       _WRI_12864
+  -------         PROC          _DIS_LINE
+  D:0007H         SYMBOL        n
+  D:0006H         SYMBOL        m
+  D:0001H         SYMBOL        s
+  C:0050H         LINE#         37
+  C:0052H         LINE#         38
+  C:0052H         LINE#         40
+  C:0061H         LINE#         41
+  C:0061H         LINE#         42
+  C:0066H         LINE#         43
+BL51 BANKED LINKER/LOCATER V6.22                                                      11/24/2011  17:06:55  PAGE 4
+
+
+  C:006BH         LINE#         44
+  C:0070H         LINE#         45
+  C:0079H         LINE#         46
+  C:0079H         LINE#         47
+  C:0079H         LINE#         49
+  C:0082H         LINE#         50
+  C:0082H         LINE#         51
+  C:0087H         LINE#         52
+  C:008EH         LINE#         53
+  C:0095H         LINE#         54
+  C:0097H         LINE#         55
+  -------         ENDPROC       _DIS_LINE
+  -------         PROC          _DIS_PAGE
+  D:0001H         SYMBOL        s
+  -------         DO            
+  D:0004H         SYMBOL        datecnt
+  -------         ENDDO         
+  C:0003H         LINE#         57
+  C:0003H         LINE#         58
+  C:0003H         LINE#         60
+  C:0005H         LINE#         61
+  C:0005H         LINE#         63
+  C:000FH         LINE#         64
+  C:0019H         LINE#         65
+  C:0023H         LINE#         66
+  C:002DH         LINE#         70
+  C:0036H         LINE#         71
+  C:003DH         LINE#         72
+  C:0044H         LINE#         73
+  C:0049H         LINE#         74
+  C:004BH         LINE#         76
+  C:004FH         LINE#         80
+  -------         ENDPROC       _DIS_PAGE
+  -------         PROC          INIT_12864
+  C:0098H         LINE#         89
+  C:0098H         LINE#         90
+  C:0098H         LINE#         91
+  C:009FH         LINE#         92
+  C:00A1H         LINE#         93
+  C:00A4H         LINE#         94
+  C:00A9H         LINE#         95
+  C:00B0H         LINE#         96
+  C:00B2H         LINE#         97
+  C:00B5H         LINE#         98
+  C:00BCH         LINE#         99
+  C:00C3H         LINE#         100
+  C:00CAH         LINE#         101
+  -------         ENDPROC       INIT_12864
+  -------         ENDMOD        SERI12864
+
+  -------         MODULE        ?C?CLDPTR
+  C:0151H         PUBLIC        ?C?CLDPTR
+  -------         ENDMOD        ?C?CLDPTR
+
+Program Size: data=9.0 xdata=0 code=394
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

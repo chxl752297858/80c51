@@ -1,0 +1,19 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+F:\mcu\编译成功资料\74ls164用任意IO口控制的使用\1.uvproj
+Project File Date:  04/06/2011
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling 1.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAY?1
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_SENDCHAR?1
+Program Size: data=9.0 xdata=0 code=68
+creating hex file from "1"...
+"1" - 0 Error(s), 2 Warning(s).

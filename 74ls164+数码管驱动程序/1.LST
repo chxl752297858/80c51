@@ -1,0 +1,135 @@
+C51 COMPILER V9.01   1                                                                     08/19/2012 13:14:05 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*-----利用移位寄存器74ls164实现串并接口转换程序------*/
+   2          /*-----2011.4.7   陈贤龙编写---------*/
+   3          
+   4          #include <reg52.h>
+   5          #include<intrins.h>
+   6          #define uchar unsigned char
+   7          #define uint  unsigned int
+   8          uchar  table[]={0Xc0,0XF9,0XA4,0XB0,0X99,0X92,0X82,0XF8,0X80,0X90};   //0—9段码
+   9          uchar  bufer[]={0x7f,0xbf,0xdf,0xef}; //数码管位选数组
+  10          uint i,aa,miao,fen;
+  11          sbit dat_164=P1^0;//164数据线
+  12          sbit clk_164=P1^1;//164时钟线
+  13          
+  14          
+  15          void delay(uint z)    //延时
+  16          {
+  17   1          uint x,y;
+  18   1          for(x=0;x<z;x++)
+  19   1              for(y=0;y<110;y++);
+  20   1      }
+  21          
+  22          
+  23          void sendchar(uchar ch)//向数码管送一字节显示数据
+  24          {
+  25   1      
+  26   1      uchar i;
+  27   1      for(i=0;i<8;i++)
+  28   1      {
+  29   2      clk_164=0;
+  30   2      dat_164=ch&0x80;
+  31   2      clk_164=1;
+  32   2      ch<<=1;
+  33   2      }
+  34   1      }
+  35          
+  36          
+  37           
+  38          void chushihua()           //初始化定时器
+  39          { 
+  40   1       
+  41   1          TMOD=0x01;
+  42   1          TH0=(65536-50000)/256;
+  43   1          TL0=(65536-50000)%256;
+  44   1          EA=1;
+  45   1          ET0=1;
+  46   1          TR0=1; 
+  47   1      }
+  48          
+  49          
+  50           /*-----------主函数------------------*/
+  51          void main()
+  52          { 
+  53   1       chushihua(); 
+  54   1       
+  55   1       while(1)
+C51 COMPILER V9.01   1                                                                     08/19/2012 13:14:05 PAGE 2   
+
+  56   1       {
+  57   2       
+  58   2          P2=bufer[0];
+  59   2          sendchar(table[miao%10]);
+  60   2          delay(5);
+  61   2      
+  62   2          P2=bufer[1];
+  63   2          sendchar(table[miao/10]);
+  64   2          delay(5);
+  65   2      
+  66   2          P2=bufer[2];
+  67   2          sendchar(table[fen%10]);
+  68   2          delay(5);   
+  69   2      
+  70   2              P2=bufer[3];
+  71   2          sendchar(table[fen/10]);
+  72   2          delay(5);   
+  73   2      
+  74   2      
+  75   2           
+  76   2       
+  77   2       
+  78   2       
+  79   2      }
+  80   1      }
+  81          
+  82          void timer0() interrupt 1 //中断累加
+  83          {
+  84   1          TH0=(65536-50000)/256;
+  85   1          TL0=(65536-50000)%256;
+  86   1          aa++; 
+  87   1          if(aa==20)    //当aa==20时，为一秒
+  88   1             {
+  89   2               aa=0;       //aa清零
+  90   2               miao++;
+  91   2               if(miao==60)//清零之后，miao加一
+  92   2               {   
+  93   3                  miao=0;
+  94   3                  fen++;
+  95   3                  if(fen==60)
+  96   3                  {
+  97   4      
+  98   4                   fen=0;
+  99   4              }
+ 100   3               }
+ 101   2             }                    
+ 102   1      
+ 103   1      
+ 104   1      
+ 105   1      }
+ 106          
+ 107          
+ 108          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    217    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     22    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   1                                                                     08/19/2012 13:14:05 PAGE 3   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

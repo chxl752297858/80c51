@@ -1,0 +1,298 @@
+C51 COMPILER V9.01   MAIN                                                                  10/16/2012 15:03:51 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          //****************************************************************//
+   2          //AM系列读单总线使用范例 
+   3          //单片机 ：AT89S52 或 STC89C52RC 
+   4          // 功能  ：串口发送温湿度数据  波特率 9600 
+   5          // 晶振  ：12M (用户系统时钟如不是12M 请更改相关宏定义及注释的延时时间)
+   6          // 编译环境:  Keil3
+   7          // 公司  ：奥松电子    
+   8          //****************************************************************//
+   9          
+  10          #include "reg52.h"
+  11          #include <intrins.h>
+  12          
+  13          #define FOSC  12000000
+  14          #define BAUD  9600
+  15          
+  16          sbit  P2_0  = P1^0 ;
+  17          
+  18          
+  19          
+  20          
+  21           
+  22          sfr T2MOD  = 0xC9;  //ADD
+  23          
+  24          typedef unsigned char  U8;       /* defined for unsigned 8-bits integer variable          无符号8位整型变量  */
+  25          typedef signed   char  S8;       /* defined for signed 8-bits integer variable            有符号8位整型变量  */
+  26          typedef unsigned int   U16;      /* defined for unsigned 16-bits integer variable         无符号16位整型变量 */
+  27          typedef signed   int   S16;      /* defined for signed 16-bits integer variable           有符号16位整型变量 */
+  28          typedef unsigned long  U32;      /* defined for unsigned 32-bits integer variable         无符号32位整型变量 */
+  29          typedef signed   long  S32;      /* defined for signed 32-bits integer variable           有符号32位整型变量 */
+  30          typedef float          F32;      /* single precision floating point variable (32bits) 单精度浮点数（32位长
+             -度） */
+  31          typedef double         F64;      /* double precision floating point variable (64bits) */
+  32          
+  33          
+  34          
+  35          
+  36          U8  U8FLAG,k;
+  37          U8  U8count,U8temp;
+  38          U8  U8T_data_H,U8T_data_L,U8RH_data_H,U8RH_data_L,U8checkdata;
+  39          U8  U8T_data_H_temp,U8T_data_L_temp,U8RH_data_H_temp,U8RH_data_L_temp,U8checkdata_temp;
+  40          U8  U8comdata;
+  41          
+  42          
+  43          /********************************************\
+  44          |* 功能： 延时  晶振为12M时                                     *|
+  45          |* 延时大约 1ms                                                 *|
+  46          \********************************************/ 
+  47          void Delay_N1ms(unsigned int t)
+  48          {
+  49   1        unsigned int i;
+  50   1        unsigned int j;
+  51   1        for(j=t;j>0;j--)
+  52   1           for(i=124;i>0;i--);  //延时大约 1ms
+  53   1      }
+  54          /********************************************\
+C51 COMPILER V9.01   MAIN                                                                  10/16/2012 15:03:51 PAGE 2   
+
+  55          |* 功能： 初始化串口                                        *|
+  56          \********************************************/
+  57          void InitUART(void)
+  58            {
+  59   1          unsigned int iTmpBaud;
+  60   1          unsigned long lTmpBaud;
+  61   1          iTmpBaud = 0; //首先选定定时器2作为波特率发生器,16位定时器,自动装载
+  62   1          SCON = 0x50;        //SM0 SM1 SM2 REN TB8 RB8 TI RI         //0   1   0   1   0   0   0  0  
+  63   1              PCON = 0x00;    //PCON的地址是87H,这里SMOD =0
+  64   1          T2CON = 0x30;       //TF2 EXF2 RCLK TCLK EXEN2 TR2 C(/T2) CP(/RL2) //0 0 1 1 0 0 0 0 
+  65   1              T2MOD = 0x00;   // /    /       /       /               /       /       T2OE    DCEN   //0 0 0 0 0 0 0 0
+  66   1          lTmpBaud = FOSC/BAUD;
+  67   1              lTmpBaud /= 32;                                         //12T-mode
+  68   1              iTmpBaud = lTmpBaud & 0xFFFF;           
+  69   1              iTmpBaud = 65536 - iTmpBaud;
+  70   1              RCAP2H = (iTmpBaud>>8) & 0x0FF;
+  71   1              RCAP2L = iTmpBaud & 0x0FF;
+  72   1              RI = 0;                 //清除接收中断标志
+  73   1              REN = 1;                //允许串行接收
+  74   1              ES = 1;                 //允许串行中断
+  75   1              TR2 = 1;                //启动定时器1
+  76   1          EA=1;           //开总中断
+  77   1        }  
+  78          
+  79          /********************************************\
+  80          |* 功能： 串口发送函数                              *|
+  81          \********************************************/
+  82          void UARTSend(char UCHAR)
+  83            {
+  84   1          SBUF=UCHAR;
+  85   1          while(TI==0);
+  86   1          TI=0;
+  87   1        }
+  88          /********************************************\
+  89          |* 功能： 串口中断函数                              *|
+  90          \********************************************/
+  91          void UARTRead(void) interrupt 4
+  92            {
+  93   1          char temp; 
+  94   1          if(RI)
+  95   1          {
+  96   2            RI=0;
+  97   2            temp = SBUF;
+  98   2          }
+  99   1        }
+ 100           /********************************************\
+ 101          |* 功能： 串口发送子函数                                *|
+ 102          \********************************************/
+ 103          
+ 104          void UART_PutString(unsigned char *buf)
+ 105            {
+ 106   1              while(*buf)
+ 107   1            UARTSend(*buf++);
+ 108   1        }
+ 109          
+ 110          
+ 111          
+ 112          
+ 113          void UART_PutStringAndNum(unsigned char *buf ,unsigned int num)
+ 114            {
+ 115   1              unsigned char a[2],i;
+ 116   1      
+C51 COMPILER V9.01   MAIN                                                                  10/16/2012 15:03:51 PAGE 3   
+
+ 117   1              a[2] = '0'+num%10;
+ 118   1              a[1] = '0'+num/10%10;
+ 119   1              a[0] = '0'+num/100%10;
+ 120   1              while(*buf)
+ 121   1          UARTSend(*buf++);
+ 122   1              UARTSend(' ');
+ 123   1               for(i=0;i<3;i++)
+ 124   1              {
+ 125   2                      UARTSend(a[i]);
+ 126   2              } 
+ 127   1         UART_PutString("\r\n");
+ 128   1        }
+ 129          
+ 130          
+ 131             
+ 132                 void Delay(U16 j)
+ 133              {      U8 i;
+ 134   1                  for(;j>0;j--)
+ 135   1                {     
+ 136   2                      for(i=0;i<27;i++);
+ 137   2      
+ 138   2                }
+ 139   1          }
+ 140                 void  Delay_10us(void)
+ 141                {
+ 142   1              U8 i;
+ 143   1              i--;
+ 144   1              i--;
+ 145   1              i--;
+ 146   1              i--;
+ 147   1              i--;
+ 148   1              i--;
+ 149   1             }
+ 150                  
+ 151                  void  COM(void)
+ 152                {
+ 153   1           
+ 154   1                      U8 i;
+ 155   1                
+ 156   1             for(i=0;i<8;i++)    
+ 157   1                  {
+ 158   2                      
+ 159   2                          U8FLAG=2;   
+ 160   2                      while((!P2_0)&&U8FLAG++);
+ 161   2                              Delay_10us();
+ 162   2                          Delay_10us();
+ 163   2                              Delay_10us();
+ 164   2                              U8temp=0;
+ 165   2                   if(P2_0)U8temp=1;
+ 166   2                          U8FLAG=2;
+ 167   2                       while((P2_0)&&U8FLAG++);
+ 168   2                      //超时则跳出for循环               
+ 169   2                       if(U8FLAG==1)break;
+ 170   2                      //判断数据位是0还是1     
+ 171   2                         
+ 172   2                      // 如果高电平高过预定0高电平值则数据位为 1 
+ 173   2                       
+ 174   2                         U8comdata<<=1;
+ 175   2                         U8comdata|=U8temp;        //0
+ 176   2                   }//rof
+ 177   1                 
+ 178   1              }
+C51 COMPILER V9.01   MAIN                                                                  10/16/2012 15:03:51 PAGE 4   
+
+ 179          
+ 180                  //--------------------------------
+ 181                  //-----湿度读取子程序 ------------
+ 182                  //--------------------------------
+ 183                  //----以下变量均为全局变量--------
+ 184                  //----温度高8位== U8T_data_H------
+ 185                  //----温度低8位== U8T_data_L------
+ 186                  //----湿度高8位== U8RH_data_H-----
+ 187                  //----湿度低8位== U8RH_data_L-----
+ 188                  //----校验 8位 == U8checkdata-----
+ 189                  //----调用相关子程序如下----------
+ 190                  //---- Delay();, Delay_10us();,COM(); 
+ 191                  //--------------------------------
+ 192          
+ 193                  void RH(void)
+ 194                  {
+ 195   1                //主机拉低18ms 
+ 196   1             P2_0=0;
+ 197   1                 Delay(180);
+ 198   1                 P2_0=1;
+ 199   1               //总线由上拉电阻拉高 主机延时20us
+ 200   1                 Delay_10us();
+ 201   1                 Delay_10us();
+ 202   1                 Delay_10us();
+ 203   1                 Delay_10us();
+ 204   1               //主机设为输入 判断从机响应信号 
+ 205   1                 P2_0=1;
+ 206   1               //判断从机是否有低电平响应信号 如不响应则跳出，响应则向下运行    
+ 207   1                 if(!P2_0)             //T !    
+ 208   1                 {
+ 209   2                 U8FLAG=2;
+ 210   2               //判断从机是否发出 80us 的低电平响应信号是否结束        
+ 211   2                 while((!P2_0)&&U8FLAG++);
+ 212   2                 U8FLAG=2;
+ 213   2               //判断从机是否发出 80us 的高电平，如发出则进入数据接收状态
+ 214   2                 while((P2_0)&&U8FLAG++);
+ 215   2               //数据接收状态          
+ 216   2                 COM();
+ 217   2                 U8RH_data_H_temp=U8comdata;
+ 218   2                 COM();
+ 219   2                 U8RH_data_L_temp=U8comdata;
+ 220   2                 COM();
+ 221   2                 U8T_data_H_temp=U8comdata;
+ 222   2                 COM();
+ 223   2                 U8T_data_L_temp=U8comdata;
+ 224   2                 COM();
+ 225   2                 U8checkdata_temp=U8comdata;
+ 226   2                 P2_0=1;
+ 227   2               //数据校验 
+ 228   2               
+ 229   2                 U8temp=(U8T_data_H_temp+U8T_data_L_temp+U8RH_data_H_temp+U8RH_data_L_temp);
+ 230   2                 if(U8temp==U8checkdata_temp)
+ 231   2                 {
+ 232   3                        U8RH_data_H=U8RH_data_H_temp;
+ 233   3                        U8RH_data_L=U8RH_data_L_temp;
+ 234   3                        U8T_data_H=U8T_data_H_temp;
+ 235   3                        U8T_data_L=U8T_data_L_temp;
+ 236   3                        U8checkdata=U8checkdata_temp;
+ 237   3                 }//fi
+ 238   2                 }//fi
+ 239   1      
+ 240   1              }
+C51 COMPILER V9.01   MAIN                                                                  10/16/2012 15:03:51 PAGE 5   
+
+ 241          
+ 242          
+ 243          
+ 244          
+ 245          
+ 246          
+ 247          
+ 248          
+ 249          void main(void)
+ 250          {
+ 251   1      
+ 252   1        InitUART();          //初始串口发送函数
+ 253   1        while(1)
+ 254   1        {      
+ 255   2           RH();
+ 256   2      
+ 257   2          Delay_N1ms(1000);     // 延时 2S(两次读取间隔至少2S)
+ 258   2              UART_PutStringAndNum("current humidity  is    : ",U8RH_data_H); 
+ 259   2          Delay_N1ms(1000);     // 延时 2S(两次读取间隔至少2S)
+ 260   2      //      UART_PutStringAndNum("current humidity  is    : ",U8RH_data_L);         
+ 261   2      //      Delay_N1ms(1000);         // 延时 2S(两次读取间隔至少2S)
+ 262   2              UART_PutStringAndNum("current temperature is  : ",U8T_data_H);  
+ 263   2      //      Delay_N1ms(1000);         // 延时 2S(两次读取间隔至少2S)
+ 264   2      //      UART_PutStringAndNum("current temperature is  :",U8T_data_L);    
+ 265   2        }
+ 266   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    550    ----
+   CONSTANT SIZE    =     57    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     15      14
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

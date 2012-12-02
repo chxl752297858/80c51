@@ -1,0 +1,456 @@
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: D:\installs soft disk\Keil C51\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*****12M¾§Õñstc89c52µ¥Æ¬»ú*********************/
+   2          
+   3          
+   4          #include<reg51.h>
+   5          #include<intrins.h>
+   6          #define uint unsigned int
+   7          #define uchar unsigned char
+   8          
+   9          uchar second1,second2,minute1,minute2,hour1,hour2,day1,day2,month1,month2,week1,week2,year1,year2;
+  10          uchar time_data[7];//ÏÔÊ¾»º³åÇø
+  11          uchar i;
+  12          uint temp,flag,ch;
+  13          
+  14          sbit e_clk=P3^7;  //´®ÐÐÊ±ÖÓÐÅºÅ
+  15          sbit rw_sid=P3^6; //´®ÐÐÊý¾ÝÏß
+  16          
+  17          sbit dq=P1^1;//DS18B20Êý¾ÝÒý½Å 
+  18                  
+  19          sbit sck=P0^0;
+  20          sbit io=P0^1;
+  21          sbit rst=P0^2;
+  22          
+  23          sbit KEY1=P1^7;  
+  24          sbit KEY2=P1^6;  
+  25          /*ds1302Çý¶¯³ÌÐò*/
+  26           
+  27            void write_ds1302_byte(uchar dat)     //Ð´µ¥×Ö½Ú
+  28            {uchar i;
+  29   1         for(i=0;i<8;i++)
+  30   1         {sck=0;
+  31   2          io=dat&0x01;
+  32   2              dat>>=1;
+  33   2              sck=1;
+  34   2         }
+  35   1        }
+  36          
+  37          
+  38            void write_ds1302(uchar add,uchar dat)
+  39            {rst=0;
+  40   1         _nop_();
+  41   1         sck=0;
+  42   1         _nop_();
+  43   1         rst=1;
+  44   1         _nop_();
+  45   1         write_ds1302_byte(add);
+  46   1         write_ds1302_byte(dat);
+  47   1         rst=0;
+  48   1         _nop_();
+  49   1         io=1;
+  50   1         sck=1;
+  51   1         }
+  52            
+  53            uchar read_ds1302(uchar add)
+  54            
+  55            {uchar i,value;
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 2   
+
+  56   1          rst=0;
+  57   1          _nop_();
+  58   1              sck=0;
+  59   1              _nop_();
+  60   1              rst=1;
+  61   1              _nop_();
+  62   1              write_ds1302_byte(add);
+  63   1              for(i=0;i<8;i++)
+  64   1              {
+  65   2              value=value>>1;
+  66   2              sck=0;
+  67   2              if(io)
+  68   2              value=value|0x80;
+  69   2              sck=1;
+  70   2              }
+  71   1              rst=0;
+  72   1              _nop_();
+  73   1              sck=0;
+  74   1              _nop_();           
+  75   1              sck=1;
+  76   1              io=1;
+  77   1              return value;
+  78   1       }
+  79                  
+  80          
+  81           void set_rtc(uchar add,value)//Éè¶¨Ê±ÖÓº¯Êý×¢Òâ BCDÂëµÄ×ª»»
+  82          { 
+  83   1        uchar temp,temp1,temp2;
+  84   1        write_ds1302(0x8e,0x00);//È¥³ýÐ´±£»¤
+  85   1        temp1=value/10; //·ÖÀëÊ®Î»
+  86   1        temp2=value%10;//·ÖÀë¸öÎ»
+  87   1        temp=temp2+temp1*16; //×ª»»Íê³ÉBCDÂë
+  88   1        write_ds1302(add,temp);
+  89   1        write_ds1302(0x8e,0x80); //¼ÓÉÏÐ´±£»¤
+  90   1      }       
+  91          
+  92          void read_rtc(void)//¶ÁÈ¡Ê±ÖÓº¯Êý
+  93          {
+  94   1      time_data[0]=read_ds1302(0x8d); //¶ÁÄê·Ý
+  95   1      time_data[1]=read_ds1302(0x8b); //¶ÁÐÇÆÚ
+  96   1      time_data[2]=read_ds1302(0x89); //¶ÁÔÂ
+  97   1      time_data[3]=read_ds1302(0x87); //¶ÁÈÕ
+  98   1      time_data[4]=read_ds1302(0x85); //¶ÁÊ±
+  99   1      time_data[5]=read_ds1302(0x83); //¶Á·Ö
+ 100   1      time_data[6]=read_ds1302(0x81); //¶ÁÃë
+ 101   1      }
+ 102          
+ 103          
+ 104          
+ 105          void time_proce() //Êý¾Ý´¦Àíº¯Êý°ÑÊý¾Ý×ª»»ÎªÏàÓ¦µÄ10½øÖÆÊý
+ 106          {   second1=time_data[6]/16; //×ª»»Îª10½øÖÆÊý¸ßÎ»
+ 107   1          second2=time_data[6]%16     ;//×ª»»Îª10½øÖÆÊýµÍÎ»
+ 108   1          minute1=time_data[5]/16;
+ 109   1          minute2=time_data[5]%16     ;
+ 110   1          hour1=time_data[4]/16 ;
+ 111   1          hour2=time_data[4]%16 ;
+ 112   1          day1=time_data[3]/16;
+ 113   1          day2=time_data[3]%16;
+ 114   1              month1=time_data[2]/16;
+ 115   1          month2=time_data[2]%16;
+ 116   1              week1=time_data[1]/16;
+ 117   1          week2=time_data[1]%16;
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 3   
+
+ 118   1              year1=time_data[0]/16;
+ 119   1          year2=time_data[0]%16;
+ 120   1      }
+ 121          
+ 122          
+ 123          /********´®ÐÐ12864ÏÔÊ¾Çý¶¯³ÌÐò***********/
+ 124          void  delay_50us(uint j)   //ÑÓÊ±50uS  
+ 125              {   
+ 126   1              uint  i; 
+ 127   1              for(; j>0; j--); 
+ 128   1              for(i=19; i>0; i--);  
+ 129   1          }
+ 130          
+ 131          //´®ÐÐ·¢ËÍÒ»×Ö½ÚÊý¾Ý   
+ 132          void send_byte(uchar  dat)   
+ 133              {   
+ 134   1                       uchar i;   
+ 135   1                       for(i=0;i<8;i++)   
+ 136   1                      {   
+ 137   2                        e_clk=0;   
+ 138   2                        if(dat&0x80)//¶ÁÈ¡×î¸ßÎ»µÄÖµÈç¹ûÊÇ1Ôòrw_sidÎª1£¬·ñÔòrw_sidÎª0£»
+ 139   2                        rw_sid=1;
+ 140   2                        else     
+ 141   2                        rw_sid=0; 
+ 142   2                                        e_clk=1;   
+ 143   2                        dat=dat<<1; //ÓÒÒÆÒ»Î»  
+ 144   2                       }   
+ 145   1          } 
+ 146          
+ 147          //Ð´¿ØÖÆÃüÁî·ÖÈý¸ö×Ö½ÚÐ´  
+ 148          void     write_com(uchar  dat)   
+ 149              {
+ 150   1                    send_byte(0xF8);//´®¿Ú¿ØÖÆ¸ñÊ½ 1111 1000     RW=0,RS=0  RW=0±íÊ¾Êý¾Ý´ÓMCUÐ´µ½LCD RS=0±íÊ¾Êý¾
+             -ÝÊÇ¿ØÖÆÖ¸Áî 
+ 151   1                    send_byte(dat&0xF0);//²¢ÐÐ8Î»Êý¾Ý¸ß4Î»¸ñÊ½ 1111 0000  µÍËÄÎ»ÖÃ0  RW=1±íÊ¾Êý¾Ý´ÓLCDÐ´µ½MCD RS
+             -=1±íÊ¾ÏÔÊ¾Êý¾Ý 
+ 152   1                    send_byte((dat&0x0F)<<4);//²¢ÐÐ8Î»Êý¾ÝµÍ4Î»¸ñÊ½ ¸ßËÄÎ»ÖÃ0 0000 1111  ×óÒÆ4Î»ºóÎ»1111 0000 
+ 153   1                                
+ 154   1          }
+ 155          
+ 156          
+ 157          //Ð´ÏÔÊ¾Êý¾Ý»òµ¥×Ö½Ú×Ö·û   
+ 158          void     write_data(uchar dat)   
+ 159              
+ 160              {         send_byte(0xFA);//1111 1010     RW=0,RS=1   
+ 161   1                    send_byte(dat&0xF0);//¸ßËÄÎ»   
+ 162   1                    send_byte((dat&0x0F)<<4);//µÍËÄÎ»  
+ 163   1          }
+ 164          
+ 165          void display(uchar n,uchar m,uchar *s) //Ð´×Ö·ûÔÚÄÄÐÐÄÇÁÐ
+ 166          {
+ 167   1        
+ 168   1          switch(n)
+ 169   1       {
+ 170   2           case 1:write_com(0x80+m-1);break;
+ 171   2           case 2:write_com(0x90+m-1);break;
+ 172   2           case 3:write_com(0x88+m-1);break;
+ 173   2           case 4:write_com(0x98+m-1);break;
+ 174   2        default:;
+ 175   2       }
+ 176   1      
+ 177   1        while(*s>0)
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 4   
+
+ 178   1       {
+ 179   2          write_data(*s);
+ 180   2          s++;
+ 181   2          delay_50us(1);
+ 182   2       }
+ 183   1      } 
+ 184          
+ 185          
+ 186           //³õÊ¼»¯     LCM   
+ 187          void     init_12864(void)   
+ 188              {   
+ 189   1                   delay_50us(100); //³õÊ¼»¯µÈ´ýÊ±¼ä40ms  
+ 190   1                   write_com(0x30);//¹¦ÄÜÉèÖÃ£¬Ò»´ÎËÍ8Î»Êý¾Ý£¬»ù±¾Ö¸Áî¼¯   
+ 191   1                   delay_50us(3);     //µÈ´ýÊÇ¼äÒª´óÓÚ100¸öus
+ 192   1                               write_com(0x30);//¹¦ÄÜÉèÖÃ£¬Ò»´ÎËÍ8Î»Êý¾Ý£¬»ù±¾Ö¸Áî¼¯ 
+ 193   1                               delay_50us(2); //µÈ´ýÊÇ¼äÒª´óÓÚ37¸öus 
+ 194   1                               write_com(0x0C);//0000,1100       ÕûÌåÏÔÊ¾£¬ÓÎ±êoff£¬ÓÎ±êÎ»ÖÃoff 
+ 195   1                               delay_50us(3); //µÈ´ýÊÇ¼äÒª´óÓÚ37¸öus  
+ 196   1                   write_com(0x01);//0000,0001     ÇåÆÁ   
+ 197   1                   delay_50us(200);   //µÈ´ýÊ±¼ä´óÓÚ10ms
+ 198   1                               write_com(0x06);//0000,0010     DDRAMµØÖ·¹éÎ»   
+ 199   1                   delay_50us(10);
+ 200   1          }
+ 201          
+ 202           /*****ds18b20³ÌÐò*******/
+ 203          
+ 204            //******************************************
+ 205            //ÑÓÊ±º¯Êý
+ 206            //*****************************************
+ 207           
+ 208            void delay(unsigned int us)
+ 209             {
+ 210   1         while(us--);
+ 211   1         }
+ 212             //******************************************
+ 213             //ds18b20¸´Î»º¯Êý
+ 214             //******************************************
+ 215             void reset(void)
+ 216             {
+ 217   1          uchar x;//
+ 218   1          dq=1;//
+ 219   1          delay(8);//ÑÓÊ±
+ 220   1              dq=0;
+ 221   1              delay(80); //À­µÍ³ÖÐø480~960us
+ 222   1              dq=1; //
+ 223   1              delay(20);//À­¸ß³ÖÐø60~120us
+ 224   1              x=dq;
+ 225   1              delay(20);
+ 226   1          }
+ 227           //******************************************
+ 228           //´Óds18b20ÖÐ¶ÁÒ»¸ö×Ö½Ú
+ 229           //******************************************
+ 230           uchar readbyte(void)
+ 231           {uchar i,value;
+ 232   1        
+ 233   1        for(i=0;i<8;i++)
+ 234   1        {dq=0;
+ 235   2         value>>=1;
+ 236   2         dq=1;
+ 237   2         if(dq)
+ 238   2         value|=0x80;
+ 239   2         delay(4);//ÑÓÊ±ÈÃµ¥Æ¬»ú²ÉÑù
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 5   
+
+ 240   2         }
+ 241   1        return(value);
+ 242   1        }
+ 243              //****************************************
+ 244           // ´Óds18b20ÖÐÐ´Ò»¸ö×Ö½Ú
+ 245           //***************************************
+ 246           void writebyte(uchar dat)
+ 247           {
+ 248   1        uchar i=0;
+ 249   1        for(i=0;i<8;i++)
+ 250   1        {dq=0;
+ 251   2         dq=dat&0x01; //´ÓµØÎ»¿ªÊ¼Ð´
+ 252   2         delay(5); //ÑÓÊ±60~120US
+ 253   2         dq=1;   //   À­¸ß
+ 254   2         dat>>=1; //ÓÒÒÆ1Î»
+ 255   2         }
+ 256   1         delay(4);
+ 257   1        }
+ 258           
+ 259             
+ 260             //********************************************
+ 261            //  ´ÓDS18B20ÖÐ¶ÁÈ¡ÊµÊ±ÎÂ¶ÈÖµ
+ 262               //********************************************
+ 263            uchar readtemp(void)
+ 264            {
+ 265   1        
+ 266   1        uchar a,b;
+ 267   1       { 
+ 268   2        reset(); //³õÊ¼»¯18b20
+ 269   2        writebyte(0xcc);//Ìø¹ýROM
+ 270   2        writebyte(0x44);//Æô¶¯ÎÂ¶È²âÁ¿
+ 271   2        delay(50);
+ 272   2      
+ 273   2        reset(); //³õÊ¼»¯18b20
+ 274   2        writebyte(0xcc);//Ìø¹ýROM
+ 275   2        writebyte(0xbe);//¶Á9¸ö¼Ä´æÆ÷£¬Ç°Á½¸öÎÂ¶È
+ 276   2        
+ 277   2        a=readbyte(); //µÍÎ»
+ 278   2        b=readbyte(); //¸ßÎ»
+ 279   2        if(b>0x0f) //ÏÔÊ¾¸ºÎÂ¶È
+ 280   2        {
+ 281   3        a=~a+1;
+ 282   3        if(a==0)
+ 283   3        b=~b+1;
+ 284   3        else 
+ 285   3        b=~b;
+ 286   3        flag=0xff; //ÏÔÊ¾·ûºÅÎ»-
+ 287   3        }
+ 288   2        else  //ÏÔÊ¾ÕýÎÂ¶È
+ 289   2        flag=0x00; //ÏÔÊ¾·ûºÅÎ»+
+ 290   2        ch=a&0x0f; //Ð¡ÊýµãÎ»
+ 291   2        a>>=4;
+ 292   2        b<<=4;
+ 293   2        b=b|a;   // ÕûÊýÎ»
+ 294   2        
+ 295   2        }
+ 296   1        
+ 297   1         return(b);
+ 298   1         }
+ 299           //*******************************
+ 300           //ÊýÂë¶¯Ì¬É¨Ãèº¯Êý
+ 301           //******************************
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 6   
+
+ 302           
+ 303           void disp_time() //ÏÔÊ¾
+ 304             {
+ 305   1          
+ 306   1          write_com(0x95);
+ 307   1          write_data(second1+0x30);
+ 308   1              write_data(second2+0x30);
+ 309   1          write_com(0x93);
+ 310   1          write_data(minute1+0x30);
+ 311   1              write_data(minute2+0x30);
+ 312   1              write_com(0x91);
+ 313   1          write_data(hour1+0x30);
+ 314   1              write_data(hour2+0x30);
+ 315   1      
+ 316   1          write_com(0x86);
+ 317   1          write_data(day1+0x30);
+ 318   1              write_data(day2+0x30);
+ 319   1              write_com(0x84);
+ 320   1          write_data(month1+0x30);
+ 321   1              write_data(month2+0x30);
+ 322   1              write_com(0x82);
+ 323   1          write_data(year1+0x30);
+ 324   1              write_data(year2+0x30);
+ 325   1              
+ 326   1              write_com(0x8d);
+ 327   1          write_data(week2+0x30);
+ 328   1              }
+ 329          
+ 330           void disp_temp()//ÏÔÊ¾ÎÂ¶Èº¯Êý
+ 331           {
+ 332   1      
+ 333   1      write_com(0x9b);
+ 334   1      write_data(temp/100+0x30);
+ 335   1      write_data(temp%100/10+0x30); 
+ 336   1      write_data(temp%100%10+0x30);
+ 337   1      write_data('.');                  
+ 338   1      write_data((ch*0.6)+0x30); 
+ 339   1      }
+ 340          
+ 341          void set_time()//Éè¶¨Ê±¼ä³ÌÐò
+ 342          {
+ 343   1      
+ 344   1        set_rtc(0X80,30);     //Éè¶¨Ãë
+ 345   1        set_rtc(0X82,16);     //Éè¶¨·Ö
+ 346   1        set_rtc(0X84,22);     //Éè¶¨Ð¡Ê±
+ 347   1        set_rtc(0X86,31);     //Éè¶¨ÈÕÆÚ
+ 348   1        set_rtc(0X88,11);     //Éè¶¨ÔÂ·Ý
+ 349   1        set_rtc(0X8A,1);      //Éè¶¨ÐÇÆÚ
+ 350   1        set_rtc(0X8C,11);      //Éè¶¨Äê·Ý
+ 351   1              
+ 352   1      }
+ 353          
+ 354          
+ 355          
+ 356          void init_int0()  // ÖÐ¶Ï0³õÊ¼»¯
+ 357          {
+ 358   1       IT0=1;//ÉèÖÃINT0ÎªÏÂ½µÑØ´¥·¢
+ 359   1       EX0=1;  //¾Ö²¿¿ªÖÐ¶Ï£¬¼´ÔÊÐíINT0ÖÐ¶Ï
+ 360   1       IT1=1;//ÉèÖÃINT0ÎªÏÂ½µÑØ´¥·¢
+ 361   1       EX1=1;  //¾Ö²¿¿ªÖÐ¶Ï£¬¼´ÔÊÐíINT0ÖÐ¶Ï
+ 362   1       EA=1;     // È«¾ÖÖÐ¶Ï
+ 363   1      }
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 7   
+
+ 364          
+ 365                  
+ 366           main(void)   
+ 367              { 
+ 368   1              
+ 369   1              init_12864();
+ 370   1              init_int0();  // ÖÐ¶Ï0³õÊ¼»¯
+ 371   1              set_time();
+ 372   1              display(1,2,"20  Äê  ÔÂ  ÈÕ");
+ 373   1          display(2,3,"Ê±  ·Ö  Ãë");
+ 374   1          display(3,3,"ÐÇÆÚ");
+ 375   1          display(4,1,"ÎÂ¶È        ¡æ");
+ 376   1        
+ 377   1              write_data(0X86);
+ 378   1              delay_50us(10);
+ 379   1              write_com(0X0F);  
+ 380   1              
+ 381   1              while(1)
+ 382   1              {
+ 383   2              
+ 384   2              temp=readtemp();
+ 385   2          read_rtc();
+ 386   2          time_proce();
+ 387   2              disp_time();
+ 388   2              disp_temp();
+ 389   2               
+ 390   2               }
+ 391   1              
+ 392   1              }
+ 393          
+ 394          
+ 395                  void serv_int0() interrupt  0  //Íâ²¿ÖÐ¶Ï0 ÊµÏÖµ÷½ÚPWMµÄ´óÐ¡
+ 396          {
+ 397   1       if(INT0==0)
+ 398   1        {
+ 399   2       delay_50us(100);
+ 400   2         
+ 401   2      KEY1=~KEY1;     
+ 402   2      
+ 403   2        }
+ 404   1      
+ 405   1      }
+ 406          void serv_int1() interrupt  2  //Íâ²¿ÖÐ¶Ï2 ÊµÏÖµ÷½ÚPWMµÄ´óÐ¡
+ 407          {
+ 408   1       if(INT1==0)
+ 409   1        {
+ 410   2        delay_50us(100);  
+ 411   2         KEY2=~KEY2;
+ 412   2      }
+ 413   1      
+ 414   1      }
+ 415          
+ 416          
+ 417          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1209    ----
+   CONSTANT SIZE    =     46    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     28       3
+C51 COMPILER V9.00   1                                                                     10/31/2011 22:53:51 PAGE 8   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

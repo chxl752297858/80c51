@@ -1,0 +1,180 @@
+C51 COMPILER V9.01   1                                                                     10/17/2012 13:06:24 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /********12M晶振stc89c52单片机DS18B20程序****************/
+   2            #include<reg52.h>
+   3            #include<intrins.h>
+   4            #define uchar unsigned char
+   5            #define uint  unsigned char
+   6            uchar code table[]={0Xc0,0XF9,0XA4,0XB0,0X99,0X92,0X82,0XF8,0X80,0X90}; //0—9数码管显示  
+   7            uchar code table1[]={0x40,0x79,0x24,0x30,0x19,0x12,0x02,0x78,0x00,0x10}; //0—9带小数点数码管显示  
+   8            uchar code table2[]={0x00,0x01,0x01,0x02,0x03,0x03,0x04,0x04,0x05,0x06,0x06,0x06,0x07,0x08,0x08,0x09,0x0
+             -9};//小数查表
+   9           
+  10            sbit dq=P1^1;//DS18B20数据引脚
+  11            uint temp,flag,ch;
+  12            
+  13            
+  14            //******************************************
+  15            //延时函数
+  16            //*****************************************
+  17           
+  18            void delay(unsigned int us)
+  19             {
+  20   1         while(us--);
+  21   1         }
+  22             //******************************************
+  23             //ds18b20复位函数
+  24             //******************************************
+  25             void reset(void)
+  26             {
+  27   1          uchar x;//
+  28   1          dq=1;//
+  29   1          delay(8);//延时
+  30   1              dq=0;
+  31   1              delay(80); //拉低持续480~960us
+  32   1              dq=1; //
+  33   1              delay(20);//拉高持续60~120us
+  34   1              x=dq;
+  35   1              delay(20);
+  36   1          }
+  37           //******************************************
+  38           //从ds18b20中读一个字节
+  39           //******************************************
+  40           uchar readbyte(void)
+  41           {uchar i,value;
+  42   1        
+  43   1        for(i=0;i<8;i++)
+  44   1        {dq=0;
+  45   2         value>>=1;
+  46   2         dq=1;
+  47   2         if(dq)
+  48   2         value|=0x80;
+  49   2         delay(4);//延时让单片机采样
+  50   2         }
+  51   1        return(value);
+  52   1        }
+  53              //****************************************
+  54           // 从ds18b20中写一个字节
+C51 COMPILER V9.01   1                                                                     10/17/2012 13:06:24 PAGE 2   
+
+  55           //***************************************
+  56           void writebyte(uchar dat)
+  57           {
+  58   1        uchar i=0;
+  59   1        for(i=0;i<8;i++)
+  60   1        {dq=0;
+  61   2         dq=dat&0x01; //从地位开始写
+  62   2         delay(5); //延时60~120US
+  63   2         dq=1;   //   拉高
+  64   2         dat>>=1; //右移1位
+  65   2         }
+  66   1         delay(4);
+  67   1        }
+  68           
+  69             
+  70             //********************************************
+  71            //  从DS18B20中读取实时温度值
+  72               //********************************************
+  73            uchar readtemp(void)
+  74            {
+  75   1        
+  76   1        uchar a,b;
+  77   1       { 
+  78   2        reset(); //初始化18b20
+  79   2        writebyte(0xcc);//跳过ROM
+  80   2        writebyte(0x44);//启动温度测量
+  81   2        delay(50);
+  82   2      
+  83   2        reset(); //初始化18b20
+  84   2        writebyte(0xcc);//跳过ROM
+  85   2        writebyte(0xbe);//读9个寄存器，前两个温度
+  86   2        
+  87   2        a=readbyte(); //低位
+  88   2        b=readbyte(); //高位
+  89   2        if(b>0x0f) //显示负温度
+  90   2        {
+  91   3        a=~a+1;
+  92   3        if(a==0)
+  93   3        b=~b+1;
+  94   3        else 
+  95   3        b=~b;
+  96   3        flag=0xff; //显示符号位-
+  97   3        }
+  98   2        else  //显示正温度
+  99   2        flag=0x00; //显示符号位+
+ 100   2        ch=a&0x0f; //小数点位
+ 101   2        a>>=4;
+ 102   2        b<<=4;
+ 103   2        b=b|a;   // 整数位
+ 104   2        
+ 105   2        }
+ 106   1        
+ 107   1         return(b);
+ 108   1         }
+ 109           //*******************************
+ 110           //数码动态扫描函数
+ 111           //******************************
+ 112           void scandisp()
+ 113                             
+ 114          {       P2=0x7f; //显示温度百位
+ 115   1          P0=table[temp/100];
+ 116   1          delay(200);
+C51 COMPILER V9.01   1                                                                     10/17/2012 13:06:24 PAGE 3   
+
+ 117   1         
+ 118   1          P2=0xbf;
+ 119   1          P0=table[temp%100/10];  //显示温度十位
+ 120   1          delay(200);
+ 121   1      
+ 122   1          P2=0xdf;    //显示温度各位
+ 123   1          P0=table1[temp%100%10];
+ 124   1          delay(200);
+ 125   1      
+ 126   1          
+ 127   1      
+ 128   1          P2=0xef;
+ 129   1          P0=table[table2[ch]]; //显示小数位
+ 130   1          delay(200);
+ 131   1      
+ 132   1      
+ 133   1           
+ 134   1      }
+ 135          //**************************************
+ 136          //主函数
+ 137          //***************************************
+ 138          
+ 139          void main()
+ 140          {
+ 141   1       
+ 142   1       
+ 143   1      
+ 144   1      temp=readtemp();
+ 145   1        scandisp();
+ 146   1       
+ 147   1      
+ 148   1       
+ 149   1      
+ 150   1      }
+ 151           
+ 152          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    297    ----
+   CONSTANT SIZE    =     37    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

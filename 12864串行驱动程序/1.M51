@@ -1,0 +1,179 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        10/04/2012  10:53:30  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+D:\KEIL\C51\BIN\BL51.EXE 1.obj TO 1 RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  1.obj (1)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  D:\KEIL\C51\LIB\C51S.LIB (?C_INIT)
+
+
+LINK MAP OF MODULE:  1 (1)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0014H     UNIT         ?DT?1
+            IDATA   001CH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     008CH     UNIT         ?C_C51STARTUP
+            CODE    008FH     0035H     UNIT         ?PR?INIT_12864?1
+            CODE    00C4H     0027H     UNIT         ?PR?MAIN?1
+            CODE    00EBH     0020H     UNIT         ?PR?_SEND_BYTE?1
+            CODE    010BH     001EH     UNIT         ?PR?_DELAY_50US?1
+            CODE    0129H     0018H     UNIT         ?PR?_WRITE_COM?1
+            CODE    0141H     0016H     UNIT         ?C_INITSEG
+            CODE    0157H     0011H     UNIT         ?PR?_WRITE_DATA?1
+
+
+
+OVERLAY MAP OF MODULE:   1 (1)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?1
+  +--> ?C_INITSEG
+
+?PR?MAIN?1
+  +--> ?PR?INIT_12864?1
+  +--> ?PR?_WRITE_COM?1
+  +--> ?PR?_DELAY_50US?1
+  +--> ?PR?_WRITE_DATA?1
+
+?PR?INIT_12864?1
+  +--> ?PR?_WRITE_COM?1
+  +--> ?PR?_DELAY_50US?1
+
+?PR?_WRITE_COM?1
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/04/2012  10:53:30  PAGE 2
+
+
+  +--> ?PR?_DELAY_50US?1
+  +--> ?PR?_SEND_BYTE?1
+
+?PR?_WRITE_DATA?1
+  +--> ?PR?_SEND_BYTE?1
+
+
+
+SYMBOL TABLE OF MODULE:  1 (1)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        1
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  B:00B0H.7       PUBLIC        e_clk
+  D:00B0H         PUBLIC        P3
+  D:0008H         PUBLIC        table
+  B:00B0H.6       PUBLIC        rw_sid
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  C:008FH         PUBLIC        init_12864
+  D:00D8H         PUBLIC        CCON
+  C:00C4H         PUBLIC        main
+  C:0157H         PUBLIC        _write_data
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:010BH         PUBLIC        _delay_50us
+  C:00F2H         PUBLIC        _send_byte
+  C:0130H         PUBLIC        _write_com
+  D:001BH         PUBLIC        i
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          _DELAY_50US
+  D:0006H         SYMBOL        j
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:010BH         LINE#         13
+  C:010BH         LINE#         14
+  C:010BH         LINE#         16
+  C:011BH         LINE#         17
+  C:0128H         LINE#         18
+  -------         ENDPROC       _DELAY_50US
+  -------         PROC          L?0025
+  -------         ENDPROC       L?0025
+  -------         PROC          _SEND_BYTE
+  D:0007H         SYMBOL        dat
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:00F2H         LINE#         21
+  C:00F2H         LINE#         22
+  C:00F2H         LINE#         24
+  C:00F4H         LINE#         25
+  C:00F4H         LINE#         26
+  C:00F6H         LINE#         27
+  C:00FAH         LINE#         28
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/04/2012  10:53:30  PAGE 3
+
+
+  C:00FEH         LINE#         30
+  C:0100H         LINE#         31
+  C:0102H         LINE#         32
+  C:0106H         LINE#         33
+  C:010AH         LINE#         34
+  -------         ENDPROC       _SEND_BYTE
+  -------         PROC          L?0026
+  -------         ENDPROC       L?0026
+  -------         PROC          _WRITE_COM
+  D:0005H         SYMBOL        dat
+  C:0130H         LINE#         37
+  C:0132H         LINE#         38
+  C:0132H         LINE#         39
+  C:0134H         LINE#         40
+  C:0137H         LINE#         41
+  -------         ENDPROC       _WRITE_COM
+  -------         PROC          _WRITE_DATA
+  D:0005H         SYMBOL        dat
+  C:0157H         LINE#         47
+  C:0159H         LINE#         49
+  C:015BH         LINE#         50
+  C:015EH         LINE#         51
+  -------         ENDPROC       _WRITE_DATA
+  -------         PROC          INIT_12864
+  C:008FH         LINE#         58
+  C:008FH         LINE#         59
+  C:008FH         LINE#         60
+  C:0091H         LINE#         61
+  C:0094H         LINE#         62
+  C:0096H         LINE#         63
+  C:0099H         LINE#         64
+  C:00A0H         LINE#         65
+  C:00A5H         LINE#         66
+  C:00ACH         LINE#         67
+  C:00B1H         LINE#         68
+  C:00B8H         LINE#         69
+  C:00BDH         LINE#         70
+  -------         ENDPROC       INIT_12864
+  -------         PROC          MAIN
+  C:00C4H         LINE#         75
+  C:00C4H         LINE#         76
+  C:00C4H         LINE#         77
+  C:00C7H         LINE#         78
+  C:00C7H         LINE#         79
+  C:00C7H         LINE#         80
+  C:00CCH         LINE#         81
+  C:00D3H         LINE#         82
+  C:00D6H         LINE#         83
+  C:00D6H         LINE#         84
+  C:00E0H         LINE#         85
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        1
+
+Program Size: data=29.0 xdata=0 code=360
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

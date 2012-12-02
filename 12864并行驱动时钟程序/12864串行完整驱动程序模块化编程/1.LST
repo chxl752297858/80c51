@@ -1,0 +1,39 @@
+C51 COMPILER V9.00   1                                                                     11/24/2011 17:06:54 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 1
+OBJECT MODULE PLACED IN 1.OBJ
+COMPILER INVOKED BY: D:\installs soft disk\Keil C51\C51\BIN\C51.EXE 1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*****12M¾§Õñstc89c52µ¥Æ¬»ú*********************/
+   2          #include<reg52.h>
+   3          #include"seri12864.h"
+   4          #include"defi.h"
+   5          
+   6          
+   7           main(void)   
+   8              { 
+   9   1               init_12864();
+  10   1              while(1)
+  11   1               {
+  12   2               dis_page("wo ai ni my darling £¡£¡")   ;
+  13   2           dis_line(3,1,"i love you ");
+  14   2               }
+  15   1              
+  16   1              }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     27    ----
+   CONSTANT SIZE    =     37    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
